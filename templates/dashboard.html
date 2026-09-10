@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ nombre_usuario }} | SeriesCalc{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Header -->
+    <div class="dash-header">
+        <div>
+            <div class="user-badge">Usuario</div>
+            <h1 class="dash-title">{{ nombre_usuario }}</h1>
+        </div>
+        <a href="/" class="btn btn-secondary">← Volver</a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card" style="--delay:0.05s">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value" id="stat-total">—</div>
+            <div class="stat-label">Total cálculos</div>
+        </div>
+        <div class="stat-card" style="--delay:0.10s">
+            <div class="stat-icon">📉</div>
+            <div class="stat-value" id="stat-error">—</div>
+            <div class="stat-label">Error promedio</div>
+        </div>
+        <div class="stat-card" style="--delay:0.15s">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-value" id="stat-tipo">—</div>
+            <div class="stat-label">Serie más usada</div>
+        </div>
+        <div class="stat-card" style="--delay:0.20s">
+            <div class="stat-icon">🕐</div>
+            <div class="stat-value" id="stat-fecha">—</div>
+            <div class="stat-label">Último cálculo</div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1: Line (full width) -->
+    <div class="charts-grid">
+        <div class="glass-card chart-card span-full">
+            <h3 class="chart-title">Valor Aproximado vs Valor Real</h3>
+            <p class="chart-desc">Comparación por registro — precisión de la serie según los términos usados</p>
+            <div class="chart-container" style="height:300px">
+                <canvas id="chart-linea"></canvas>
+            </div>
+        </div>
+
+        <!-- Charts Row 2: Bar + Doughnut -->
+        <div class="glass-card chart-card">
+            <h3 class="chart-title">Error Absoluto por Registro</h3>
+            <p class="chart-desc">Magnitud del error en cada cálculo — escala logarítmica</p>
+            <div class="chart-container" style="height:260px">
+                <canvas id="chart-barras"></canvas>
+            </div>
+        </div>
+
+        <div class="glass-card chart-card">
+            <h3 class="chart-title">Distribución por Tipo de Serie</h3>
+            <p class="chart-desc">Cantidad de cálculos agrupados por función</p>
+            <div class="chart-container" style="height:260px">
+                <canvas id="chart-dona"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="glass-card table-card">
+        <div class="table-header">
+            <h3 class="chart-title">Historial Completo</h3>
+            <span class="badge" id="table-count">cargando...</span>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Tipo de Serie</th>
+                        <th>Categoría</th>
+                        <th>x</th>
+                        <th>Términos</th>
+                        <th>Aproximado</th>
+                        <th>Real</th>
+                        <th>Error Abs.</th>
+                        <th>Error Rel.</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-body">
+                    <tr><td colspan="10" class="loading-cell">Cargando datos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+const USUARIO = {{ nombre_usuario | tojson }};
+
+const PALETTE = [
+    '#6366f1','#8b5cf6','#06b6d4','#10b981',
+    '#f59e0b','#ef4444','#ec4899','#f97316'
+];
+
+const SCALE_OPTS = {
+    x: { ticks: { color: '#6b7280', maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+    y: { ticks: { color: '#6b7280' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+};
+
+const TOOLTIP_OPTS = {
+    backgroundColor: 'rgba(13,17,23,0.95)',
+    borderColor: 'rgba(99,102,241,0.4)',
+    borderWidth: 1,
+    titleColor: '#f9fafb',
+    bodyColor: '#9ca3af',
+    padding: 12,
+    cornerRadius: 8,
+};
+
+const LEGEND_OPTS = {
+    labels: { color: '#9ca3af', font: { family: 'Inter', size: 12 }, padding: 14, boxWidth: 12 }
+};
+
+async function loadDashboard() {
+    let data;
+    try {
+        const res = await fetch(`/api/historial/${encodeURIComponent(USUARIO)}`);
+        if (!res.ok) throw new Error(await res.text());
+        data = await res.json();
+    } catch (err) {
+        document.querySelector('.container').innerHTML = `
+            <div class="error-page">
+                <div class="error-icon">⚠️</div>
+                <h2>No se pudieron cargar los datos</h2>
+                <p>${err.message}</p>
+                <a href="/" class="btn btn-primary" style="margin-top:20px">← Volver al inicio</a>
+            </div>`;
+        return;
+    }
+
+    renderStats(data);
+    renderLineChart(data);
+    renderBarChart(data);
+    renderDoughnut(data);
+    renderTable(data);
+}
+
+/* ── Stats ─────────────────────────────────────────────────────────── */
+function renderStats(data) {
+    document.getElementById('stat-total').textContent = data.length;
+
+    const avgError = data.reduce((s, r) => s + r.error_absoluto, 0) / (data.length || 1);
+    document.getElementById('stat-error').textContent = avgError.toExponential(2);
+
+    const counts = {};
+    data.forEach(r => counts[r.tipo_serie] = (counts[r.tipo_serie] || 0) + 1);
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    document.getElementById('stat-tipo').textContent = top
+        ? top[0].replace(/_/g, ' ')
+        : '—';
+
+    const ultima = data.reduce((max, r) => r.fecha_calculo > max ? r.fecha_calculo : max, '');
+    if (ultima) {
+        const d = new Date(ultima);
+        document.getElementById('stat-fecha').textContent =
+            d.toLocaleDateString('es', { day: '2-digit', month: 'short' }) + ' ' +
+            d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+    }
+}
+
+/* ── Line chart ─────────────────────────────────────────────────────── */
+function renderLineChart(data) {
+    const labels = data.map(r => `#${r.n_registro}`);
+    new Chart(document.getElementById('chart-linea'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Aproximado',
+                    data: data.map(r => r.valor_aproximado),
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99,102,241,0.08)',
+                    tension: 0.35,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    fill: false,
+                },
+                {
+                    label: 'Real',
+                    data: data.map(r => r.valor_real),
+                    borderColor: '#06b6d4',
+                    backgroundColor: 'rgba(6,182,212,0.08)',
+                    tension: 0.35,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    borderDash: [6, 3],
+                    fill: false,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: SCALE_OPTS,
+            plugins: { tooltip: TOOLTIP_OPTS, legend: LEGEND_OPTS },
+        },
+    });
+}
+
+/* ── Bar chart ──────────────────────────────────────────────────────── */
+function renderBarChart(data) {
+    const colors = data.map((_, i) => PALETTE[i % PALETTE.length]);
+    new Chart(document.getElementById('chart-barras'), {
+        type: 'bar',
+        data: {
+            labels: data.map(r => `#${r.n_registro}`),
+            datasets: [{
+                label: 'Error Absoluto',
+                data: data.map(r => r.error_absoluto),
+                backgroundColor: colors.map(c => `${c}99`),
+                borderColor: colors,
+                borderWidth: 1,
+                borderRadius: 4,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                ...SCALE_OPTS,
+                y: {
+                    ...SCALE_OPTS.y,
+                    type: data.some(r => r.error_absoluto > 0) ? 'logarithmic' : 'linear',
+                },
+            },
+            plugins: { tooltip: TOOLTIP_OPTS, legend: { display: false } },
+        },
+    });
+}
+
+/* ── Doughnut chart ─────────────────────────────────────────────────── */
+function renderDoughnut(data) {
+    const counts = {};
+    data.forEach(r => counts[r.tipo_serie] = (counts[r.tipo_serie] || 0) + 1);
+    const labels = Object.keys(counts);
+    const values = Object.values(counts);
+
+    new Chart(document.getElementById('chart-dona'), {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: PALETTE.slice(0, labels.length).map(c => `${c}cc`),
+                borderColor: PALETTE.slice(0, labels.length),
+                borderWidth: 2,
+                hoverOffset: 8,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                tooltip: TOOLTIP_OPTS,
+                legend: { ...LEGEND_OPTS, position: 'bottom' },
+            },
+        },
+    });
+}
+
+/* ── Table ──────────────────────────────────────────────────────────── */
+function renderTable(data) {
+    document.getElementById('table-count').textContent = `${data.length} registros`;
+    const tbody = document.getElementById('tabla-body');
+
+    if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="10" class="loading-cell">Sin registros aún.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(r => `
+        <tr>
+            <td class="mono">${r.n_registro}</td>
+            <td><span class="type-badge">${r.tipo_serie}</span></td>
+            <td class="text-muted">${r.categoria}</td>
+            <td class="mono">${r.valor_x}</td>
+            <td class="mono">${r.n_terminos}</td>
+            <td class="mono">${r.valor_aproximado.toFixed(8)}</td>
+            <td class="mono">${r.valor_real.toFixed(8)}</td>
+            <td class="mono error-val">${r.error_absoluto.toExponential(4)}</td>
+            <td class="mono text-muted">
+                ${r.error_relativo != null
+                    ? (r.error_relativo * 100).toFixed(4) + '%'
+                    : '—'}
+            </td>
+            <td class="text-muted">
+                ${new Date(r.fecha_calculo).toLocaleString('es', {
+                    day: '2-digit', month: 'short',
+                    hour: '2-digit', minute: '2-digit'
+                })}
+            </td>
+        </tr>
+    `).join('');
+}
+
+loadDashboard();
+</script>
+{% endblock %}

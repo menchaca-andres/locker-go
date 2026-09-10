@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Series Matemáticas{% endblock %}</title>
+    <meta name="description" content="Calculadora de series matemáticas con aproximaciones de Taylor y funciones trigonométricas.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-inner">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">∑</span>
+                <span>Series<span class="brand-accent">Calc</span></span>
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Inicio</a>
+                <a href="/docs" target="_blank" class="nav-link nav-link-outline">API Docs ↗</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>SeriesCalc — Calculadora de Aproximaciones Matemáticas</p>
+        </div>
+    </footer>
+</body>
+</html>

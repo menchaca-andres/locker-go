@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Inicio — SeriesCalc{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container hero-inner">
+        <div class="hero-badge">Cálculo Numérico</div>
+        <h1 class="hero-title">
+            Aproximación de<br>
+            <span class="gradient-text">Series Matemáticas</span>
+        </h1>
+        <p class="hero-subtitle">
+            Calculá funciones trigonométricas mediante series de Maclaurin y Taylor.
+            Compará el valor aproximado con el real, analizá el error y visualizá los resultados.
+        </p>
+
+        <div class="hero-chips">
+            <span class="chip">Taylor sin/cos</span>
+            <span class="chip">Trig sin/cos/tan</span>
+            <span class="chip">Inversas arcsin/arccos/arctan</span>
+        </div>
+    </div>
+</section>
+
+<section class="actions-section">
+    <div class="container actions-grid">
+
+        <!-- Panel: Buscar usuario -->
+        <div class="glass-card">
+            <div class="card-icon">📊</div>
+            <h2 class="card-title">Ver Dashboard</h2>
+            <p class="card-desc">Consultá el historial, estadísticas y gráficos de un usuario.</p>
+            <form id="form-buscar" class="form-stack" onsubmit="buscarUsuario(event)">
+                <input
+                    type="text"
+                    id="input-usuario"
+                    class="form-input"
+                    placeholder="Nombre de usuario..."
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit" class="btn btn-primary">Ver historial →</button>
+            </form>
+        </div>
+
+        <!-- Panel: Calcular -->
+        <div class="glass-card">
+            <div class="card-icon">🧮</div>
+            <h2 class="card-title">Nuevo Cálculo</h2>
+            <p class="card-desc">Calculá una aproximación y guardala en el historial.</p>
+            <form id="form-calcular" class="form-stack" onsubmit="calcular(event)">
+                <input
+                    type="text"
+                    name="nombre_usuario"
+                    class="form-input"
+                    placeholder="Nombre de usuario..."
+                    autocomplete="off"
+                    required
+                >
+                <select name="tipo_serie" class="form-select">
+                    <optgroup label="Series de Taylor">
+                        <option value="taylor_seno">Taylor — sin(x)</option>
+                        <option value="taylor_coseno">Taylor — cos(x)</option>
+                    </optgroup>
+                    <optgroup label="Trigonométricas">
+                        <option value="trig_seno">Trig — sin(x)</option>
+                        <option value="trig_coseno">Trig — cos(x)</option>
+                        <option value="trig_tangente">Trig — tan(x)</option>
+                    </optgroup>
+                    <optgroup label="Inversas">
+                        <option value="trig_arcoseno">Inv — arcsin(x) &nbsp; [x ∈ [-1,1]]</option>
+                        <option value="trig_arcocoseno">Inv — arccos(x) &nbsp; [x ∈ [-1,1]]</option>
+                        <option value="trig_arcotangente">Inv — arctan(x) &nbsp; [x ∈ [-1,1]]</option>
+                    </optgroup>
+                </select>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label class="form-label">Valor de x (rad)</label>
+                        <input type="number" name="valor_x" class="form-input" placeholder="p. ej. 0.785" step="any" required>
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Nº de términos</label>
+                        <input type="number" name="n_terminos" class="form-input" placeholder="10" min="1" max="200" value="10" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-calcular">Calcular</button>
+            </form>
+            <div id="resultado" class="result-box hidden"></div>
+        </div>
+    </div>
+</section>
+
+<script>
+function buscarUsuario(e) {
+    e.preventDefault();
+    const usuario = document.getElementById('input-usuario').value.trim();
+    if (usuario) window.location.href = `/dashboard/${encodeURIComponent(usuario)}`;
+}
+
+async function calcular(e) {
+    e.preventDefault();
+    const form = e.target;
+    const btn  = document.getElementById('btn-calcular');
+    const box  = document.getElementById('resultado');
+
+    const payload = {
+        nombre_usuario: form.nombre_usuario.value.trim(),
+        tipo_serie:     form.tipo_serie.value,
+        valor_x:        parseFloat(form.valor_x.value),
+        n_terminos:     parseInt(form.n_terminos.value),
+    };
+
+    btn.disabled = true;
+    btn.textContent = 'Calculando...';
+    box.className = 'result-box';
+    box.textContent = '';
+
+    try {
+        const res  = await fetch('/calcular', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const text = await res.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch {
+            throw new Error(`El servidor devolvió una respuesta no válida (${res.status})`);
+        }
+        if (!res.ok) {
+            let errorMsg = 'Error en el cálculo';
+            if (typeof data.detail === 'string') {
+                errorMsg = data.detail;
+            } else if (Array.isArray(data.detail)) {
+                errorMsg = data.detail.map(d => `${d.loc ? d.loc.join('.') : ''}: ${d.msg}`).join(' | ');
+            }
+            throw new Error(errorMsg);
+        }
+
+        box.innerHTML = `
+            <div class="result-header">
+                <span class="result-label">Registro #${data.n_registro}</span>
+                <span class="type-badge">${payload.tipo_serie}</span>
+            </div>
+            <div class="result-rows">
+                <div class="result-row">
+                    <span>Valor aproximado</span>
+                    <strong class="mono">${data.valor_aproximado.toFixed(10)}</strong>
+                </div>
+                <div class="result-row">
+                    <span>Valor real</span>
+                    <strong class="mono">${data.valor_real.toFixed(10)}</strong>
+                </div>
+                <div class="result-row">
+                    <span>Error absoluto</span>
+                    <strong class="mono error-val">${data.error_absoluto.toExponential(4)}</strong>
+                </div>
+                ${data.error_relativo != null
+                    ? `<div class="result-row">
+                           <span>Error relativo</span>
+                           <strong class="mono">${(data.error_relativo * 100).toFixed(6)} %</strong>
+                       </div>`
+                    : ''}
+            </div>
+            <a href="/dashboard/${encodeURIComponent(payload.nombre_usuario)}" class="btn btn-sm btn-outline">
+                Ver dashboard de ${payload.nombre_usuario} →
+            </a>
+        `;
+        box.classList.remove('hidden');
+    } catch (err) {
+        box.className = 'result-box result-error';
+        box.textContent = `Error: ${err.message}`;
+        box.classList.remove('hidden');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Calcular';
+    }
+}
+</script>
+{% endblock %}
