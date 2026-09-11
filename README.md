@@ -39,18 +39,18 @@ Accedé a la aplicación en:
 ```mermaid
 graph TD
     subgraph Clientes
-        WEB[Frontend Web - HTML/CSS/JS/KaTeX]
-        CLI[Cliente Terminal - cliente.py]
+        WEB["Frontend Web (HTML / CSS / JS / KaTeX)"]
+        CLI["Cliente Terminal (cliente.py)"]
     end
 
     subgraph Servidor FastAPI
-        API[API REST Router /api/calcular]
-        DASH_ROUTER[Dashboard Router /dashboard/{user}]
-        ENGINE[Motor de Series Numéricas]
+        API["API REST Router (/api/calcular)"]
+        DASH_ROUTER["Dashboard Router (/dashboard/:user)"]
+        ENGINE["Motor de Series Numéricas"]
     end
 
     subgraph Persistencia
-        DB[(Base de Datos: SQLite / Supabase PostgreSQL)]
+        DB[("Base de Datos (SQLite / Supabase)")]
     end
 
     WEB -->|HTTP / JSON| API
