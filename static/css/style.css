@@ -239,9 +239,19 @@ input, select, textarea { font-family: inherit; }
 }
 
 .card-icon {
-    font-size: 1.8rem;
-    margin-bottom: 14px;
-    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: var(--radius-sm);
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent);
+    margin-bottom: 16px;
+}
+.card-icon svg {
+    width: 24px;
+    height: 24px;
 }
 .card-title {
     font-size: 1.15rem;
@@ -480,7 +490,21 @@ input, select, textarea { font-family: inherit; }
     box-shadow: var(--shadow-accent);
 }
 
-.stat-icon { font-size: 1.5rem; margin-bottom: 10px; line-height: 1; }
+.stat-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent);
+    margin-bottom: 12px;
+}
+.stat-icon svg {
+    width: 20px;
+    height: 20px;
+}
 
 .stat-value {
     font-size: 1.55rem;
@@ -627,7 +651,21 @@ input, select, textarea { font-family: inherit; }
     text-align: center;
     padding: 100px 20px;
 }
-.error-icon { font-size: 3rem; margin-bottom: 20px; }
+.error-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--danger);
+    margin-bottom: 20px;
+}
+.error-icon svg {
+    width: 32px;
+    height: 32px;
+}
 .error-page h2 { font-size: 1.4rem; color: var(--text-3); margin-bottom: 10px; }
 .error-page p  { color: var(--text-4); margin-bottom: 6px; font-size: 0.9rem; }
 
