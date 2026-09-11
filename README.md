@@ -67,16 +67,16 @@ graph TD
 
 El sistema soporta 3 categorías de series matemáticas según el diseño del modelo:
 
-| Categoría | Serie | Ecuación / Definición | Dominio Recomendado |
+| Categoría | Serie | Ecuación Matemática (Sumatoria) | Dominio / Restricción |
 |---|---|---|---|
-| **Taylor** | `taylor_seno` | $\sum_{k=0}^{n-1} \frac{(-1)^k x^{2k+1}}{(2k+1)!}$ | $x \in \mathbb{R}$ |
-| **Taylor** | `taylor_coseno` | $\sum_{k=0}^{n-1} \frac{(-1)^k x^{2k}}{(2k)!}$ | $x \in \mathbb{R}$ |
-| **Trigonométrica** | `trig_seno` | Serie trigonométrica directa | $x \in [-\pi, \pi]$ |
-| **Trigonométrica** | `trig_coseno` | Serie trigonométrica directa | $x \in [-\pi, \pi]$ |
-| **Trigonométrica** | `trig_tangente` | Cociente $\sin(x)/\cos(x)$ aproximado | $x \neq \frac{\pi}{2} + k\pi$ |
-| **Trig. Inversa** | `trig_arcoseno` | Serie de potencias de $\arcsin(x)$ | $|x| \le 1$ |
-| **Trig. Inversa** | `trig_arcocoseno` | $\frac{\pi}{2} - \arcsin(x)$ | $|x| \le 1$ |
-| **Trig. Inversa** | `trig_arcotangente` | Serie de Gregory-Leibniz | $|x| \le 1$ |
+| **Taylor** | `taylor_seno` | $\sum_{k=0}^{n-1} \frac{(-1)^k x^{2k+1}}{(2k+1)!} = x - \frac{x^3}{3!} + \frac{x^5}{5!} - \dots$ | $x \in \mathbb{R}$ |
+| **Taylor** | `taylor_coseno` | $\sum_{k=0}^{n-1} \frac{(-1)^k x^{2k}}{(2k)!} = 1 - \frac{x^2}{2!} + \frac{x^4}{4!} - \dots$ | $x \in \mathbb{R}$ |
+| **Trigonométrica** | `trig_seno` | $\sum_{k=0}^{n-1} \frac{(-1)^k x^{2k+1}}{(2k+1)!}$ (Directa Maclaurin) | $x \in [-\pi, \pi]$ |
+| **Trigonométrica** | `trig_coseno` | $\sum_{k=0}^{n-1} \frac{(-1)^k x^{2k}}{(2k)!}$ (Directa Maclaurin) | $x \in [-\pi, \pi]$ |
+| **Trigonométrica** | `trig_tangente` | $\frac{\text{seno\_aprox}(x)}{\text{coseno\_aprox}(x)}$ (Cociente de series) | $x \neq \frac{\pi}{2} + k\pi$ |
+| **Trig. Inversa** | `trig_arcoseno` | $\sum_{k=0}^{n-1} \frac{(2k)!}{4^k (k!)^2 (2k+1)} x^{2k+1} = x + \frac{1}{6}x^3 + \frac{3}{40}x^5 + \dots$ | $x \in [-1, 1]$ |
+| **Trig. Inversa** | `trig_arcocoseno` | $\frac{\pi}{2} - \text{arcoseno\_aprox}(x)$ (Identidad complementaria) | $x \in [-1, 1]$ |
+| **Trig. Inversa** | `trig_arcotangente` | $\sum_{k=0}^{n-1} \frac{(-1)^k x^{2k+1}}{2k+1} = x - \frac{x^3}{3} + \frac{x^5}{5} - \dots$ | $x \in [-1, 1]$ |
 
 ---
 
