@@ -16,22 +16,22 @@
     <!-- Stats Cards -->
     <div class="stats-grid">
         <div class="stat-card" style="--delay:0.05s">
-            <div class="stat-icon">📊</div>
+            <div class="stat-icon"><i data-lucide="chart-line"></i></div>
             <div class="stat-value" id="stat-total">—</div>
             <div class="stat-label">Total cálculos</div>
         </div>
         <div class="stat-card" style="--delay:0.10s">
-            <div class="stat-icon">📉</div>
+            <div class="stat-icon"><i data-lucide="trending-down"></i></div>
             <div class="stat-value" id="stat-error">—</div>
             <div class="stat-label">Error promedio</div>
         </div>
         <div class="stat-card" style="--delay:0.15s">
-            <div class="stat-icon">🏆</div>
+            <div class="stat-icon"><i data-lucide="trophy"></i></div>
             <div class="stat-value" id="stat-tipo">—</div>
             <div class="stat-label">Serie más usada</div>
         </div>
         <div class="stat-card" style="--delay:0.20s">
-            <div class="stat-icon">🕐</div>
+            <div class="stat-icon"><i data-lucide="calendar-clock"></i></div>
             <div class="stat-value" id="stat-fecha">—</div>
             <div class="stat-label">Último cálculo</div>
         </div>
@@ -94,6 +94,12 @@
         </div>
     </div>
 </div>
+
+<!-- Lucide: cargar librería + ejecutar reemplazo de iconos -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+</script>
 
 <script>
 const USUARIO = {{ nombre_usuario | tojson }};

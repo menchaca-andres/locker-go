@@ -27,7 +27,9 @@
 
         <!-- Panel: Buscar usuario -->
         <div class="glass-card">
-            <div class="card-icon">📊</div>
+            <div class="card-icon">
+                <i data-lucide="chart-column"></i>
+            </div>
             <h2 class="card-title">Ver Dashboard</h2>
             <p class="card-desc">Consultá el historial, estadísticas y gráficos de un usuario.</p>
             <form id="form-buscar" class="form-stack" onsubmit="buscarUsuario(event)">
@@ -45,7 +47,9 @@
 
         <!-- Panel: Calcular -->
         <div class="glass-card">
-            <div class="card-icon">🧮</div>
+            <div class="card-icon">
+                <i data-lucide="calculator"></i>
+            </div>
             <h2 class="card-title">Nuevo Cálculo</h2>
             <p class="card-desc">Calculá una aproximación y guardala en el historial.</p>
             <form id="form-calcular" class="form-stack" onsubmit="calcular(event)">
@@ -177,5 +181,9 @@ async function calcular(e) {
         btn.textContent = 'Calcular';
     }
 }
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
 </script>
 {% endblock %}
