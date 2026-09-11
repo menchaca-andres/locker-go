@@ -7,7 +7,10 @@
     <!-- Header -->
     <div class="dash-header">
         <div>
-            <div class="user-badge">Usuario</div>
+            <div class="dash-badges">
+                <span class="user-badge">Usuario</span>
+                <span class="live-indicator"><span class="live-dot"></span> En tiempo real</span>
+            </div>
             <h1 class="dash-title">{{ nombre_usuario }}</h1>
         </div>
         <a href="/" class="btn btn-secondary">← Volver</a>
@@ -116,6 +119,8 @@
                 </tbody>
             </table>
         </div>
+        <!-- Pagination Controls -->
+        <div class="pagination-bar" id="pagination-bar"></div>
     </div>
 </div>
 
@@ -146,6 +151,15 @@ const LEGEND_OPTS = {
     labels: { color: '#9ca3af', font: { family: 'Inter', size: 12 }, padding: 14, boxWidth: 12 }
 };
 
+let lineChart = null;
+let barChart = null;
+let doughnutChart = null;
+
+// Variables de paginación
+const PAGE_SIZE = 20;
+let currentPage = 1;
+let allRecords = [];
+
 async function loadDashboard() {
     let data;
     try {
@@ -153,19 +167,21 @@ async function loadDashboard() {
         if (!res.ok) throw new Error(await res.text());
         data = await res.json();
     } catch (err) {
-        document.querySelector('.container').innerHTML = `
-            <div class="error-page">
-                <div class="error-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                        <line x1="12" x2="12" y1="9" y2="13"/>
-                        <line x1="12" x2="12.01" y1="17" y2="17"/>
-                    </svg>
-                </div>
-                <h2>No se pudieron cargar los datos</h2>
-                <p>${err.message}</p>
-                <a href="/" class="btn btn-primary" style="margin-top:20px">← Volver al inicio</a>
-            </div>`;
+        if (!lineChart && !barChart && !doughnutChart) {
+            document.querySelector('.container').innerHTML = `
+                <div class="error-page">
+                    <div class="error-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                            <line x1="12" x2="12" y1="9" y2="13"/>
+                            <line x1="12" x2="12.01" y1="17" y2="17"/>
+                        </svg>
+                    </div>
+                    <h2>No se pudieron cargar los datos</h2>
+                    <p>${err.message}</p>
+                    <a href="/" class="btn btn-primary" style="margin-top:20px">← Volver al inicio</a>
+                </div>`;
+        }
         return;
     }
 
@@ -173,7 +189,13 @@ async function loadDashboard() {
     renderLineChart(data);
     renderBarChart(data);
     renderDoughnut(data);
-    renderTable(data);
+    
+    // Comparar longitud de datos para refrescar la tabla
+    const isDifferent = JSON.stringify(data) !== JSON.stringify(allRecords);
+    if (isDifferent) {
+        allRecords = data;
+        renderTable(allRecords);
+    }
 }
 
 /* ── Stats ─────────────────────────────────────────────────────────── */
@@ -202,29 +224,43 @@ function renderStats(data) {
 /* ── Line chart ─────────────────────────────────────────────────────── */
 function renderLineChart(data) {
     const labels = data.map(r => `#${r.n_registro}`);
-    new Chart(document.getElementById('chart-linea'), {
+    const aproxData = data.map(r => r.valor_aproximado);
+    const realData = data.map(r => r.valor_real);
+
+    if (lineChart) {
+        lineChart.data.labels = labels;
+        lineChart.data.datasets[0].data = aproxData;
+        lineChart.data.datasets[1].data = realData;
+        lineChart.update('none');
+        return;
+    }
+
+    const canvas = document.getElementById('chart-linea');
+    if (!canvas) return;
+
+    lineChart = new Chart(canvas, {
         type: 'line',
         data: {
             labels,
             datasets: [
                 {
                     label: 'Aproximado',
-                    data: data.map(r => r.valor_aproximado),
+                    data: aproxData,
                     borderColor: '#6366f1',
                     backgroundColor: 'rgba(99,102,241,0.08)',
                     tension: 0.35,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
                     fill: false,
                 },
                 {
                     label: 'Real',
-                    data: data.map(r => r.valor_real),
+                    data: realData,
                     borderColor: '#06b6d4',
                     backgroundColor: 'rgba(6,182,212,0.08)',
                     tension: 0.35,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
                     borderDash: [6, 3],
                     fill: false,
                 },
@@ -242,13 +278,29 @@ function renderLineChart(data) {
 /* ── Bar chart ──────────────────────────────────────────────────────── */
 function renderBarChart(data) {
     const colors = data.map((_, i) => PALETTE[i % PALETTE.length]);
-    new Chart(document.getElementById('chart-barras'), {
+    const labels = data.map(r => `#${r.n_registro}`);
+    const errors = data.map(r => r.error_absoluto);
+
+    if (barChart) {
+        barChart.data.labels = labels;
+        barChart.data.datasets[0].data = errors;
+        barChart.data.datasets[0].backgroundColor = colors.map(c => `${c}99`);
+        barChart.data.datasets[0].borderColor = colors;
+        barChart.options.scales.y.type = data.some(r => r.error_absoluto > 0) ? 'logarithmic' : 'linear';
+        barChart.update('none');
+        return;
+    }
+
+    const canvas = document.getElementById('chart-barras');
+    if (!canvas) return;
+
+    barChart = new Chart(canvas, {
         type: 'bar',
         data: {
-            labels: data.map(r => `#${r.n_registro}`),
+            labels,
             datasets: [{
                 label: 'Error Absoluto',
-                data: data.map(r => r.error_absoluto),
+                data: errors,
                 backgroundColor: colors.map(c => `${c}99`),
                 borderColor: colors,
                 borderWidth: 1,
@@ -277,7 +329,19 @@ function renderDoughnut(data) {
     const labels = Object.keys(counts);
     const values = Object.values(counts);
 
-    new Chart(document.getElementById('chart-dona'), {
+    if (doughnutChart) {
+        doughnutChart.data.labels = labels;
+        doughnutChart.data.datasets[0].data = values;
+        doughnutChart.data.datasets[0].backgroundColor = PALETTE.slice(0, labels.length).map(c => `${c}cc`);
+        doughnutChart.data.datasets[0].borderColor = PALETTE.slice(0, labels.length);
+        doughnutChart.update('none');
+        return;
+    }
+
+    const canvas = document.getElementById('chart-dona');
+    if (!canvas) return;
+
+    doughnutChart = new Chart(canvas, {
         type: 'doughnut',
         data: {
             labels,
@@ -301,25 +365,41 @@ function renderDoughnut(data) {
     });
 }
 
-/* ── Table ──────────────────────────────────────────────────────────── */
+/* ── Table & Pagination ─────────────────────────────────────────────── */
+function totalPages() {
+    return Math.max(1, Math.ceil(allRecords.length / PAGE_SIZE));
+}
+
 function renderTable(data) {
-    document.getElementById('table-count').textContent = `${data.length} registros`;
+    if (currentPage > totalPages()) currentPage = 1;
+    renderPage();
+}
+
+function renderPage() {
+    const total = allRecords.length;
+    document.getElementById('table-count').textContent = `${total} registros`;
     const tbody = document.getElementById('tabla-body');
 
-    if (!data.length) {
+    if (!total) {
         tbody.innerHTML = '<tr><td colspan="10" class="loading-cell">Sin registros aún.</td></tr>';
+        renderPagination();
         return;
     }
 
-    tbody.innerHTML = data.map(r => `
+    // Ordenar descendente (más recientes primero)
+    const ordered = [...allRecords].reverse();
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageData = ordered.slice(start, start + PAGE_SIZE);
+
+    tbody.innerHTML = pageData.map(r => `
         <tr>
             <td class="mono">${r.n_registro}</td>
             <td><span class="type-badge">${r.tipo_serie}</span></td>
             <td class="text-muted">${r.categoria}</td>
             <td class="mono">${r.valor_x}</td>
             <td class="mono">${r.n_terminos}</td>
-            <td class="mono">${r.valor_aproximado.toFixed(8)}</td>
-            <td class="mono">${r.valor_real.toFixed(8)}</td>
+            <td class="mono font-semibold">${r.valor_aproximado.toFixed(8)}</td>
+            <td class="mono text-muted">${r.valor_real.toFixed(8)}</td>
             <td class="mono error-val">${r.error_absoluto.toExponential(4)}</td>
             <td class="mono text-muted">
                 ${r.error_relativo != null
@@ -329,13 +409,61 @@ function renderTable(data) {
             <td class="text-muted">
                 ${new Date(r.fecha_calculo).toLocaleString('es', {
                     day: '2-digit', month: 'short',
-                    hour: '2-digit', minute: '2-digit'
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
                 })}
             </td>
         </tr>
     `).join('');
+
+    renderPagination();
 }
 
+function renderPagination() {
+    const bar = document.getElementById('pagination-bar');
+    if (!bar) return;
+    const pages = totalPages();
+
+    if (pages <= 1) {
+        bar.innerHTML = '';
+        return;
+    }
+
+    // Calcular rango de números de página visibles
+    const range = [];
+    const delta = 2;
+    for (let i = 1; i <= pages; i++) {
+        if (i === 1 || i === pages || (i >= currentPage - delta && i <= currentPage + delta)) {
+            range.push(i);
+        }
+    }
+
+    let html = `<button class="pg-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goPage(${currentPage - 1})">Anterior</button>`;
+
+    let prev = null;
+    range.forEach(p => {
+        if (prev !== null && p - prev > 1) {
+            html += `<span class="pg-ellipsis">…</span>`;
+        }
+        html += `<button class="pg-btn ${p === currentPage ? 'pg-active' : ''}" onclick="goPage(${p})">${p}</button>`;
+        prev = p;
+    });
+
+    html += `<button class="pg-btn" ${currentPage === pages ? 'disabled' : ''} onclick="goPage(${currentPage + 1})">Siguiente</button>`;
+    html += `<span class="pg-info">Pág ${currentPage} de ${pages} (${allRecords.length} datos)</span>`;
+
+    bar.innerHTML = html;
+}
+
+function goPage(p) {
+    const pages = totalPages();
+    if (p < 1 || p > pages) return;
+    currentPage = p;
+    renderPage();
+    document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Carga inicial y sondeo en tiempo real cada 2 segundos
 loadDashboard();
+setInterval(loadDashboard, 2000);
 </script>
 {% endblock %}
