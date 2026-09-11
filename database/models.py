@@ -9,7 +9,11 @@ class Usuario(Base):
     __tablename__ = "usuarios"
 
     id_usuario = Column(Integer, primary_key=True, autoincrement=True)
-    nombre_usuario = Column(String, unique=True, nullable=False)
+    nombre_usuario = Column(String, unique=True, nullable=False, index=True)
+    email = Column(String, unique=True, nullable=True, index=True)
+    password_hash = Column(String, nullable=True)
+    salt = Column(String, nullable=True)
+    session_token = Column(String, nullable=True, index=True)
     fecha_registro = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     registros = relationship("RegistroCalculo", back_populates="usuario")
@@ -42,3 +46,18 @@ class RegistroCalculo(Base):
 
     usuario = relationship("Usuario", back_populates="registros")
     tipo_serie = relationship("TipoSerie", back_populates="registros")
+    iteraciones = relationship("IteracionCalculo", back_populates="registro", cascade="all, delete-orphan", order_by="IteracionCalculo.n_iteracion")
+
+
+class IteracionCalculo(Base):
+    __tablename__ = "iteraciones_calculo"
+
+    id_iteracion = Column(Integer, primary_key=True, autoincrement=True)
+    n_registro = Column(Integer, ForeignKey("registros_calculo.n_registro"), nullable=False)
+    n_iteracion = Column(Integer, nullable=False)
+    valor_termino = Column(Float, nullable=False)
+    valor_acumulado = Column(Float, nullable=False)
+    error_absoluto = Column(Float, nullable=False)
+    error_relativo = Column(Float, nullable=True)
+
+    registro = relationship("RegistroCalculo", back_populates="iteraciones")

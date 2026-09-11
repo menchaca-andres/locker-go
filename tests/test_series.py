@@ -107,3 +107,41 @@ class TestTrigInversas:
     def test_arcotangente_fuera_dominio(self):
         with pytest.raises(ValueError):
             trig_arcotangente(1.5, N)
+
+
+# ---------------------------------------------------------------------------
+# Iteraciones Detalladas
+# ---------------------------------------------------------------------------
+class TestIteracionesDetalladas:
+    def test_taylor_seno_iteraciones(self):
+        res, iters = taylor_seno(1.0, 5, detallado=True)
+        assert len(iters) == 5
+        assert iters[0]["n_iteracion"] == 1
+        assert iters[0]["valor_termino"] == pytest.approx(1.0)
+        assert iters[0]["valor_acumulado"] == pytest.approx(1.0)
+        assert iters[-1]["valor_acumulado"] == pytest.approx(res)
+
+    def test_taylor_coseno_iteraciones(self):
+        res, iters = taylor_coseno(0.5, 4, detallado=True)
+        assert len(iters) == 4
+        assert iters[0]["n_iteracion"] == 1
+        assert iters[0]["valor_termino"] == pytest.approx(1.0)
+        assert iters[-1]["valor_acumulado"] == pytest.approx(res)
+
+    def test_trig_tangente_iteraciones(self):
+        res, iters = trig_tangente(0.5, 5, detallado=True)
+        assert len(iters) == 5
+        assert iters[-1]["valor_acumulado"] == pytest.approx(res)
+
+    def test_trig_inversas_iteraciones(self):
+        res_asin, iters_asin = trig_arcoseno(0.5, 5, detallado=True)
+        assert len(iters_asin) == 5
+        assert iters_asin[-1]["valor_acumulado"] == pytest.approx(res_asin)
+
+        res_acos, iters_acos = trig_arcocoseno(0.5, 5, detallado=True)
+        assert len(iters_acos) == 5
+        assert iters_acos[-1]["valor_acumulado"] == pytest.approx(res_acos)
+
+        res_atan, iters_atan = trig_arcotangente(0.5, 5, detallado=True)
+        assert len(iters_atan) == 5
+        assert iters_atan[-1]["valor_acumulado"] == pytest.approx(res_atan)

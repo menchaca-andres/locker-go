@@ -92,6 +92,112 @@
         </div>
     </div>
 
+    <!-- Iteration Analysis Section -->
+    <div class="glass-card table-card iteration-card" id="seccion-iteraciones">
+        <div class="iteration-header">
+            <div>
+                <h3 class="chart-title">Análisis de Convergencia por Iteración</h3>
+                <p class="chart-desc">Comportamiento término a término — Ajustá x y términos para ver el cambio en tiempo real</p>
+                <div class="iteration-meta-badges" id="iter-meta-badges">
+                    <span class="meta-chip">Seleccioná un registro o ingresá valores</span>
+                </div>
+            </div>
+            <div class="iteration-selector-box">
+                <label for="select-registro-iter" class="text-muted" style="font-size:0.85rem">Cargar de historial:</label>
+                <select id="select-registro-iter" class="iteration-select" onchange="seleccionarRegistro(this.value)">
+                    <option value="">Cargando cálculos...</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Real-Time Interactive Controls Bar -->
+        <div class="iteration-controls-bar">
+            <div class="control-group">
+                <label for="interactive-serie">Función / Serie</label>
+                <select id="interactive-serie" class="form-select-sm" onchange="recalcularEnTiempoReal()">
+                    <option value="taylor_seno">Taylor Seno</option>
+                    <option value="taylor_coseno">Taylor Coseno</option>
+                    <option value="trig_seno">Trig Seno</option>
+                    <option value="trig_coseno">Trig Coseno</option>
+                    <option value="trig_tangente">Trig Tangente</option>
+                    <option value="trig_arcoseno">Trig Arcoseno</option>
+                    <option value="trig_arcocoseno">Trig Arcocoseno</option>
+                    <option value="trig_arcotangente">Trig Arcotangente</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="interactive-x">Valor de x (positivo o negativo)</label>
+                <input type="number" id="interactive-x" step="any" value="1.0" class="form-input-sm" oninput="recalcularEnTiempoReal()" style="width: 140px;">
+            </div>
+            <div class="control-group">
+                <label for="interactive-n">Términos (1 - 200)</label>
+                <input type="number" id="interactive-n" min="1" max="200" value="10" class="form-input-sm" oninput="recalcularEnTiempoReal()" style="width: 110px;">
+            </div>
+            <div class="control-group" style="margin-left: auto; align-self: flex-end;">
+                <button class="btn btn-sm btn-primary" onclick="guardarCalculoInteractivo()">
+                    💾 Guardar en Base de Datos
+                </button>
+            </div>
+        </div>
+
+        <!-- Iteration Charts Row -->
+        <div class="charts-grid" style="margin-bottom: 24px;">
+            <!-- Chart 1: Plano Cartesiano Completo (4 Cuadrantes: -X a +X, -Y a +Y) -->
+            <div class="glass-card chart-card span-full" style="background: rgba(13, 17, 23, 0.7); border: 1px solid rgba(99, 102, 241, 0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                    <div>
+                        <h4 class="chart-title" style="font-size: 1.05rem; color: #c7d2fe;">Plano Cartesiano de 4 Cuadrantes ($f(x)$ vs Serie $P_n(x)$)</h4>
+                        <p class="chart-desc">Eje X (negativo a positivo) y Eje Y (negativo a positivo) cruzándose en el origen $(0,0)$</p>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-3); font-family: 'JetBrains Mono', monospace;">
+                        <span style="color: #06b6d4;">― Real $f(x)$</span> &nbsp;|&nbsp; 
+                        <span style="color: #a855f7;">― Serie $P_n(x)$</span> &nbsp;|&nbsp; 
+                        <span style="color: #f59e0b;">● Punto evaluado</span>
+                    </div>
+                </div>
+                <div class="chart-container" style="height:320px">
+                    <canvas id="chart-plano-cartesiano"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 2: Convergencia Sk vs Real -->
+            <div class="chart-card">
+                <h4 class="chart-title" style="font-size: 0.95rem;">Convergencia: Valor Acumulado ($S_k$) vs Valor Real</h4>
+                <p class="chart-desc">Aproximación paso a paso con origen cero $y=0$ destacado</p>
+                <div class="chart-container" style="height:260px">
+                    <canvas id="chart-iter-linea"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 3: Error por Iteración -->
+            <div class="chart-card">
+                <h4 class="chart-title" style="font-size: 0.95rem;">Decaimiento del Error y Magnitud del Término</h4>
+                <p class="chart-desc">Error absoluto $|S_k - \text{real}|$ y valor del término $t_k$</p>
+                <div class="chart-container" style="height:260px">
+                    <canvas id="chart-iter-error"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Iterations Table -->
+        <div class="table-wrapper" style="max-height: 320px; overflow-y: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Iteración (k)</th>
+                        <th>Valor Término ($t_k$)</th>
+                        <th>Valor Acumulado ($S_k$)</th>
+                        <th>Error Absoluto</th>
+                        <th>Error Relativo</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-iteraciones-body">
+                    <tr><td colspan="5" class="loading-cell">Cargando desglose de iteraciones...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- Table -->
     <div class="glass-card table-card">
         <div class="table-header">
@@ -112,10 +218,11 @@
                         <th>Error Abs.</th>
                         <th>Error Rel.</th>
                         <th>Fecha</th>
+                        <th>Acción</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-body">
-                    <tr><td colspan="10" class="loading-cell">Cargando datos...</td></tr>
+                    <tr><td colspan="11" class="loading-cell">Cargando datos...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -154,11 +261,15 @@ const LEGEND_OPTS = {
 let lineChart = null;
 let barChart = null;
 let doughnutChart = null;
+let iterLineChart = null;
+let iterErrorChart = null;
+let planoCartesianoChart = null;
 
 // Variables de paginación
 const PAGE_SIZE = 20;
 let currentPage = 1;
 let allRecords = [];
+let selectedRegistroId = null;
 
 async function loadDashboard() {
     let data;
@@ -190,11 +301,20 @@ async function loadDashboard() {
     renderBarChart(data);
     renderDoughnut(data);
     
+    // Actualizar selector de registros para iteraciones
+    actualizarSelectorRegistros(data);
+
     // Comparar longitud de datos para refrescar la tabla
     const isDifferent = JSON.stringify(data) !== JSON.stringify(allRecords);
     if (isDifferent) {
         allRecords = data;
         renderTable(allRecords);
+
+        // Si no hay registro seleccionado o hay nuevos datos, seleccionar el último
+        if (!selectedRegistroId && data.length > 0) {
+            const ultimo = data[data.length - 1];
+            seleccionarRegistro(ultimo.n_registro);
+        }
     }
 }
 
@@ -365,6 +485,657 @@ function renderDoughnut(data) {
     });
 }
 
+/* ── Iteration Analysis & Real-Time Simulation ──────────────────────── */
+function simularSerieJS(tipo, x, n) {
+    n = Math.max(1, Math.min(200, parseInt(n) || 1));
+    x = parseFloat(x) || 0.0;
+    let resultado = 0.0;
+    let iteraciones = [];
+    let valReal = 0.0;
+
+    if (tipo === 'taylor_seno' || tipo === 'trig_seno') {
+        valReal = Math.sin(x);
+        let termino = x;
+        for (let k = 0; k < n; k++) {
+            resultado += termino;
+            iteraciones.push({
+                n_iteracion: k + 1,
+                valor_termino: termino,
+                valor_acumulado: resultado,
+                error_absoluto: Math.abs(valReal - resultado),
+                error_relativo: valReal !== 0 ? Math.abs((valReal - resultado) / valReal) : null
+            });
+            termino *= -x * x / ((2 * k + 2) * (2 * k + 3));
+            if (termino === 0 || !isFinite(termino)) break;
+        }
+    } else if (tipo === 'taylor_coseno' || tipo === 'trig_coseno') {
+        valReal = Math.cos(x);
+        let termino = 1.0;
+        for (let k = 0; k < n; k++) {
+            resultado += termino;
+            iteraciones.push({
+                n_iteracion: k + 1,
+                valor_termino: termino,
+                valor_acumulado: resultado,
+                error_absoluto: Math.abs(valReal - resultado),
+                error_relativo: valReal !== 0 ? Math.abs((valReal - resultado) / valReal) : null
+            });
+            termino *= -x * x / ((2 * k + 1) * (2 * k + 2));
+            if (termino === 0 || !isFinite(termino)) break;
+        }
+    } else if (tipo === 'trig_tangente') {
+        valReal = Math.tan(x);
+        let s_res = 0.0, s_term = x, s_iters = [];
+        for (let k = 0; k < n; k++) {
+            s_res += s_term;
+            s_iters.push(s_res);
+            s_term *= -x * x / ((2 * k + 2) * (2 * k + 3));
+        }
+        let c_res = 0.0, c_term = 1.0, c_iters = [];
+        for (let k = 0; k < n; k++) {
+            c_res += c_term;
+            c_iters.push(c_res);
+            c_term *= -x * x / ((2 * k + 1) * (2 * k + 2));
+        }
+        let prev_tan = 0.0;
+        for (let k = 0; k < n; k++) {
+            let tan_k = Math.abs(c_iters[k]) > 1e-12 ? s_iters[k] / c_iters[k] : (s_iters[k] >= 0 ? 1e9 : -1e9);
+            let term_k = k === 0 ? tan_k : tan_k - prev_tan;
+            prev_tan = tan_k;
+            resultado = tan_k;
+            iteraciones.push({
+                n_iteracion: k + 1,
+                valor_termino: term_k,
+                valor_acumulado: tan_k,
+                error_absoluto: Math.abs(valReal - tan_k),
+                error_relativo: valReal !== 0 ? Math.abs((valReal - tan_k) / valReal) : null
+            });
+        }
+    } else if (tipo === 'trig_arcoseno') {
+        valReal = Math.asin(x);
+        let termino = x;
+        for (let k = 0; k < n; k++) {
+            resultado += termino;
+            iteraciones.push({
+                n_iteracion: k + 1,
+                valor_termino: termino,
+                valor_acumulado: resultado,
+                error_absoluto: Math.abs(valReal - resultado),
+                error_relativo: valReal !== 0 ? Math.abs((valReal - resultado) / valReal) : null
+            });
+            termino *= Math.pow(2 * k + 1, 2) * (x * x) / ((2 * k + 2) * (2 * k + 3));
+            if (termino === 0 || !isFinite(termino)) break;
+        }
+    } else if (tipo === 'trig_arcocoseno') {
+        valReal = Math.acos(x);
+        let asin_res = 0.0, termino = x;
+        for (let k = 0; k < n; k++) {
+            asin_res += termino;
+            let acos_val = (Math.PI / 2) - asin_res;
+            let term_val = k === 0 ? (Math.PI / 2) - termino : -termino;
+            resultado = acos_val;
+            iteraciones.push({
+                n_iteracion: k + 1,
+                valor_termino: term_val,
+                valor_acumulado: acos_val,
+                error_absoluto: Math.abs(valReal - acos_val),
+                error_relativo: valReal !== 0 ? Math.abs((valReal - acos_val) / valReal) : null
+            });
+            termino *= Math.pow(2 * k + 1, 2) * (x * x) / ((2 * k + 2) * (2 * k + 3));
+            if (termino === 0 || !isFinite(termino)) break;
+        }
+    } else if (tipo === 'trig_arcotangente') {
+        valReal = Math.atan(x);
+        let termino = x;
+        for (let k = 0; k < n; k++) {
+            resultado += termino;
+            iteraciones.push({
+                n_iteracion: k + 1,
+                valor_termino: termino,
+                valor_acumulado: resultado,
+                error_absoluto: Math.abs(valReal - resultado),
+                error_relativo: valReal !== 0 ? Math.abs((valReal - resultado) / valReal) : null
+            });
+            termino *= -x * x * (2 * k + 1) / (2 * k + 3);
+            if (termino === 0 || !isFinite(termino)) break;
+        }
+    }
+
+    return { resultado, valReal, iteraciones };
+}
+
+function recalcularEnTiempoReal() {
+    const tipo = document.getElementById('interactive-serie')?.value || 'taylor_seno';
+    const x = parseFloat(document.getElementById('interactive-x')?.value) || 0.0;
+    const n = Math.max(1, Math.min(200, parseInt(document.getElementById('interactive-n')?.value) || 10));
+
+    const sim = simularSerieJS(tipo, x, n);
+    const mockReg = {
+        tipo_serie: tipo,
+        valor_x: x,
+        n_terminos: n,
+        valor_real: sim.valReal,
+        valor_aproximado: sim.resultado,
+        error_absoluto: Math.abs(sim.valReal - sim.resultado)
+    };
+
+    renderIterMetaBadges(mockReg);
+    renderIterCharts(sim.iteraciones, mockReg);
+    renderPlanoCartesiano(tipo, x, n);
+    renderIterTable(sim.iteraciones);
+}
+
+async function guardarCalculoInteractivo() {
+    const tipo = document.getElementById('interactive-serie')?.value;
+    const x = parseFloat(document.getElementById('interactive-x')?.value);
+    const n = parseInt(document.getElementById('interactive-n')?.value);
+
+    try {
+        const res = await fetch('/calcular', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nombre_usuario: USUARIO,
+                tipo_serie: tipo,
+                valor_x: x,
+                n_terminos: n
+            })
+        });
+
+        if (!res.ok) {
+            const errData = await res.json();
+            alert('Error al calcular: ' + (errData.detail || 'Error desconocido'));
+            return;
+        }
+
+        const data = await res.json();
+        await loadDashboard();
+        seleccionarRegistro(data.n_registro);
+    } catch (err) {
+        alert('Error de conexión al guardar el cálculo: ' + err.message);
+    }
+}
+
+function actualizarSelectorRegistros(data) {
+    const select = document.getElementById('select-registro-iter');
+    if (!select) return;
+
+    const currentVal = select.value;
+    const ordered = [...data].reverse();
+
+    if (ordered.length === 0) {
+        select.innerHTML = '<option value="">Sin registros</option>';
+        return;
+    }
+
+    select.innerHTML = ordered.map(r => `
+        <option value="${r.n_registro}" ${r.n_registro == selectedRegistroId ? 'selected' : ''}>
+            #${r.n_registro} — ${r.tipo_serie} (x=${r.valor_x}, n=${r.n_terminos})
+        </option>
+    `).join('');
+
+    if (selectedRegistroId && select.querySelector(`option[value="${selectedRegistroId}"]`)) {
+        select.value = selectedRegistroId;
+    }
+}
+
+async function seleccionarRegistro(n_reg, scrollIntoView = false) {
+    if (!n_reg) return;
+    selectedRegistroId = parseInt(n_reg);
+
+    const select = document.getElementById('select-registro-iter');
+    if (select) select.value = selectedRegistroId;
+
+    const reg = allRecords.find(r => r.n_registro === selectedRegistroId);
+    if (reg) {
+        // Sincronizar inputs interactivos con el registro seleccionado
+        const inputSerie = document.getElementById('interactive-serie');
+        const inputX = document.getElementById('interactive-x');
+        const inputN = document.getElementById('interactive-n');
+        if (inputSerie) inputSerie.value = reg.tipo_serie.toLowerCase().replace(/\s+/g, '_');
+        if (inputX) inputX.value = reg.valor_x;
+        if (inputN) inputN.value = reg.n_terminos;
+
+        renderIterMetaBadges(reg);
+    }
+
+    try {
+        const res = await fetch(`/api/registro/${selectedRegistroId}/iteraciones`);
+        if (!res.ok) throw new Error(await res.text());
+        const iterations = await res.json();
+        
+        renderIterCharts(iterations, reg);
+        renderPlanoCartesiano(reg ? reg.tipo_serie : 'taylor_seno', reg ? reg.valor_x : 1.0, reg ? reg.n_terminos : 10);
+        renderIterTable(iterations);
+
+        if (scrollIntoView) {
+            document.getElementById('seccion-iteraciones')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    } catch (err) {
+        console.error("Error al cargar iteraciones:", err);
+    }
+}
+
+function renderIterMetaBadges(reg) {
+    const box = document.getElementById('iter-meta-badges');
+    if (!box || !reg) return;
+
+    box.innerHTML = `
+        <span class="meta-chip">Serie: <strong>${reg.tipo_serie}</strong></span>
+        <span class="meta-chip">x: <strong>${reg.valor_x}</strong></span>
+        <span class="meta-chip">Términos: <strong>${reg.n_terminos}</strong></span>
+        <span class="meta-chip">Real: <strong>${isFinite(reg.valor_real) ? reg.valor_real.toFixed(6) : '—'}</strong></span>
+        <span class="meta-chip">Aprox: <strong>${isFinite(reg.valor_aproximado) ? reg.valor_aproximado.toFixed(6) : '—'}</strong></span>
+        <span class="meta-chip">Error: <strong>${isFinite(reg.error_absoluto) ? reg.error_absoluto.toExponential(3) : '—'}</strong></span>
+    `;
+}
+
+function renderPlanoCartesiano(tipo, currentX, nTerminos) {
+    const canvas = document.getElementById('chart-plano-cartesiano');
+    if (!canvas) return;
+
+    currentX = parseFloat(currentX) || 0.0;
+    nTerminos = parseInt(nTerminos) || 10;
+    tipo = (tipo || 'taylor_seno').toLowerCase().replace(/\s+/g, '_');
+
+    const isInverse = tipo.includes('arcoseno') || tipo.includes('arcocoseno') || tipo.includes('arcotangente');
+    const xLimit = isInverse ? 1.0 : Math.max(Math.PI * 2, Math.abs(currentX) + 1.5);
+    const steps = 140;
+    const dx = (2 * xLimit) / steps;
+
+    const realPoints = [];
+    const taylorPoints = [];
+
+    for (let i = 0; i <= steps; i++) {
+        const xi = -xLimit + i * dx;
+        let yReal = null;
+        let yTaylor = null;
+
+        try {
+            if (tipo === 'taylor_seno' || tipo === 'trig_seno') {
+                yReal = Math.sin(xi);
+            } else if (tipo === 'taylor_coseno' || tipo === 'trig_coseno') {
+                yReal = Math.cos(xi);
+            } else if (tipo === 'trig_tangente') {
+                const cosVal = Math.cos(xi);
+                yReal = Math.abs(cosVal) > 0.05 ? Math.tan(xi) : null;
+            } else if (tipo === 'trig_arcoseno') {
+                yReal = Math.abs(xi) <= 1 ? Math.asin(xi) : null;
+            } else if (tipo === 'trig_arcocoseno') {
+                yReal = Math.abs(xi) <= 1 ? Math.acos(xi) : null;
+            } else if (tipo === 'trig_arcotangente') {
+                yReal = Math.abs(xi) <= 1 ? Math.atan(xi) : null;
+            }
+
+            const sim = simularSerieJS(tipo, xi, nTerminos);
+            yTaylor = isFinite(sim.resultado) ? sim.resultado : null;
+            if (yTaylor !== null && Math.abs(yTaylor) > 20) yTaylor = null;
+            if (yReal !== null && Math.abs(yReal) > 20) yReal = null;
+        } catch (e) {}
+
+        if (yReal !== null) realPoints.push({ x: xi, y: yReal });
+        if (yTaylor !== null) taylorPoints.push({ x: xi, y: yTaylor });
+    }
+
+    const currentEval = simularSerieJS(tipo, currentX, nTerminos);
+    const currentPoint = isFinite(currentEval.resultado) ? [{ x: currentX, y: currentEval.resultado }] : [];
+
+    // Calcular límites simétricos en Y
+    let maxAbsY = 1.5;
+    [...realPoints, ...taylorPoints].forEach(p => {
+        if (p.y !== null && isFinite(p.y) && Math.abs(p.y) < 15) {
+            maxAbsY = Math.max(maxAbsY, Math.abs(p.y));
+        }
+    });
+    maxAbsY = Math.min(15, Math.ceil(maxAbsY * 1.25 * 10) / 10);
+
+    const fourQuadrantPlugin = {
+        id: 'fourQuadrantPlugin',
+        afterDraw(chart) {
+            const { ctx, chartArea, scales: { x, y } } = chart;
+            if (!chartArea || !x || !y) return;
+            const { left, right, top, bottom } = chartArea;
+
+            ctx.save();
+
+            // Eje Y Central (x = 0)
+            const xZero = x.getPixelForValue(0);
+            if (xZero >= left && xZero <= right) {
+                ctx.strokeStyle = '#f43f5e';
+                ctx.lineWidth = 2.2;
+                ctx.beginPath();
+                ctx.moveTo(xZero, top);
+                ctx.lineTo(xZero, bottom);
+                ctx.stroke();
+
+                ctx.fillStyle = '#f43f5e';
+                ctx.font = 'bold 11px JetBrains Mono, monospace';
+                ctx.fillText('Eje Y (x=0)', xZero + 6, top + 16);
+            }
+
+            // Eje X Central (y = 0)
+            const yZero = y.getPixelForValue(0);
+            if (yZero >= top && yZero <= bottom) {
+                ctx.strokeStyle = '#f43f5e';
+                ctx.lineWidth = 2.2;
+                ctx.beginPath();
+                ctx.moveTo(left, yZero);
+                ctx.lineTo(right, yZero);
+                ctx.stroke();
+
+                ctx.fillStyle = '#f43f5e';
+                ctx.font = 'bold 11px JetBrains Mono, monospace';
+                ctx.fillText('Eje X (y=0)', right - 75, yZero - 6);
+            }
+
+            // Etiquetas de cuadrantes
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.font = 'bold 12px Inter, sans-serif';
+            ctx.fillText('II (-x, +y)', left + 14, top + 24);
+            ctx.fillText('I (+x, +y)', right - 85, top + 24);
+            ctx.fillText('III (-x, -y)', left + 14, bottom - 14);
+            ctx.fillText('IV (+x, -y)', right - 85, bottom - 14);
+
+            ctx.restore();
+        }
+    };
+
+    const CARTESIAN_OPTS = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: {
+                type: 'linear',
+                min: -xLimit,
+                max: xLimit,
+                border: { display: true, color: '#94a3b8', width: 2 },
+                ticks: { color: '#f1f5f9', font: { family: 'JetBrains Mono', weight: '600', size: 11 } },
+                grid: {
+                    color: (ctx) => (ctx.tick && ctx.tick.value === 0) ? 'transparent' : 'rgba(255, 255, 255, 0.08)',
+                },
+                title: {
+                    display: true,
+                    text: '← Eje X Negativo ( -x ) ────── 0 ────── Eje X Positivo ( +x ) →',
+                    color: '#f8fafc',
+                    font: { weight: 'bold', size: 12 }
+                }
+            },
+            y: {
+                type: 'linear',
+                min: -maxAbsY,
+                max: maxAbsY,
+                border: { display: true, color: '#94a3b8', width: 2 },
+                ticks: { color: '#f1f5f9', font: { family: 'JetBrains Mono', weight: '600', size: 11 } },
+                grid: {
+                    color: (ctx) => (ctx.tick && ctx.tick.value === 0) ? 'transparent' : 'rgba(255, 255, 255, 0.08)',
+                },
+                title: {
+                    display: true,
+                    text: '← Eje Y Negativo ( -y ) ────── 0 ────── Eje Y Positivo ( +y ) →',
+                    color: '#f8fafc',
+                    font: { weight: 'bold', size: 12 }
+                }
+            }
+        },
+        plugins: {
+            tooltip: TOOLTIP_OPTS,
+            legend: { display: false }
+        }
+    };
+
+    if (planoCartesianoChart) {
+        planoCartesianoChart.data.datasets[0].data = realPoints;
+        planoCartesianoChart.data.datasets[1].data = taylorPoints;
+        planoCartesianoChart.data.datasets[1].label = `Polinomio Serie P_n(x) [n=${nTerminos}]`;
+        planoCartesianoChart.data.datasets[2].data = currentPoint;
+        planoCartesianoChart.data.datasets[2].label = `Punto evaluado (x=${currentX})`;
+        planoCartesianoChart.options.scales.x.min = -xLimit;
+        planoCartesianoChart.options.scales.x.max = xLimit;
+        planoCartesianoChart.options.scales.y.min = -maxAbsY;
+        planoCartesianoChart.options.scales.y.max = maxAbsY;
+        planoCartesianoChart.update('none');
+    } else {
+        planoCartesianoChart = new Chart(canvas, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'Función Real f(x)',
+                        data: realPoints,
+                        showLine: true,
+                        borderColor: '#06b6d4',
+                        borderWidth: 2.5,
+                        pointRadius: 0,
+                        tension: 0.2
+                    },
+                    {
+                        label: `Polinomio Serie P_n(x) [n=${nTerminos}]`,
+                        data: taylorPoints,
+                        showLine: true,
+                        borderColor: '#a855f7',
+                        borderWidth: 2.5,
+                        borderDash: [4, 4],
+                        pointRadius: 0,
+                        tension: 0.2
+                    },
+                    {
+                        label: `Punto evaluado (x=${currentX})`,
+                        data: currentPoint,
+                        borderColor: '#f59e0b',
+                        backgroundColor: '#f59e0b',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }
+                ]
+            },
+            options: CARTESIAN_OPTS,
+            plugins: [fourQuadrantPlugin]
+        });
+    }
+}
+
+function renderIterCharts(iterations, reg) {
+    const labels = iterations.map(it => `k=${it.n_iteracion}`);
+    const acumulados = iterations.map(it => it.valor_acumulado);
+    const valorReal = reg ? reg.valor_real : (iterations.length ? iterations[iterations.length - 1].valor_acumulado : 0);
+    const lineaReal = iterations.map(() => valorReal);
+    const errores = iterations.map(it => it.error_absoluto);
+    const terminos = iterations.map(it => it.valor_termino);
+
+    const cartesianAxesPlugin = {
+        id: 'cartesianAxesPlugin',
+        afterDraw(chart) {
+            const { ctx, chartArea, scales: { x, y } } = chart;
+            if (!chartArea || !x || !y) return;
+            const { left, right, top, bottom } = chartArea;
+
+            ctx.save();
+            // 1. Dibujar línea horizontal y=0 si está visible en el gráfico
+            const yZero = y.getPixelForValue(0);
+            if (yZero >= top && yZero <= bottom) {
+                ctx.strokeStyle = '#f43f5e'; // Color coral/rosa visible para el eje y=0
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 4]);
+                ctx.beginPath();
+                ctx.moveTo(left, yZero);
+                ctx.lineTo(right, yZero);
+                ctx.stroke();
+
+                ctx.fillStyle = '#f43f5e';
+                ctx.font = 'bold 10px JetBrains Mono, monospace';
+                ctx.fillText('Eje Y=0', left + 8, yZero - 5);
+            }
+
+            // 2. Dibujar líneas de marco de los ejes (Borde izquierdo Y y borde inferior X)
+            ctx.strokeStyle = '#94a3b8'; // Slate claro de alto contraste
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            
+            // Eje Y (vertical izquierdo)
+            ctx.beginPath();
+            ctx.moveTo(left, top);
+            ctx.lineTo(left, bottom);
+            ctx.stroke();
+
+            // Eje X (horizontal inferior)
+            ctx.beginPath();
+            ctx.moveTo(left, bottom);
+            ctx.lineTo(right, bottom);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+    };
+
+    const CONV_SCALE_OPTS = {
+        x: {
+            border: { display: true, color: '#94a3b8', width: 2 },
+            ticks: { color: '#f1f5f9', font: { family: 'JetBrains Mono', weight: '600', size: 11 }, maxRotation: 45 },
+            grid: { color: 'rgba(255,255,255,0.08)' },
+            title: { display: true, text: 'Iteración / Término (k)', color: '#f8fafc', font: { weight: 'bold', size: 12 } }
+        },
+        y: {
+            border: { display: true, color: '#94a3b8', width: 2 },
+            ticks: { color: '#f1f5f9', font: { family: 'JetBrains Mono', weight: '600', size: 11 } },
+            grid: {
+                color: (ctx) => (ctx.tick && ctx.tick.value === 0) ? 'rgba(244, 63, 94, 0.7)' : 'rgba(255, 255, 255, 0.08)',
+                lineWidth: (ctx) => (ctx.tick && ctx.tick.value === 0) ? 2 : 1,
+            },
+            title: { display: true, text: 'Valor Acumulado ($S_k$)', color: '#f8fafc', font: { weight: 'bold', size: 12 } }
+        }
+    };
+
+    // 1. Gráfico de Convergencia (Valor Acumulado vs Real)
+    const canvasLine = document.getElementById('chart-iter-linea');
+    if (canvasLine) {
+        if (iterLineChart) {
+            iterLineChart.data.labels = labels;
+            iterLineChart.data.datasets[0].data = acumulados;
+            iterLineChart.data.datasets[1].data = lineaReal;
+            iterLineChart.options.scales = CONV_SCALE_OPTS;
+            iterLineChart.update('none');
+        } else {
+            iterLineChart = new Chart(canvasLine, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Acumulado (S_k)',
+                            data: acumulados,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139,92,246,0.12)',
+                            borderWidth: 2.5,
+                            tension: 0.2,
+                            pointRadius: iterations.length > 50 ? 2 : 4,
+                            fill: false,
+                        },
+                        {
+                            label: 'Valor Real',
+                            data: lineaReal,
+                            borderColor: '#06b6d4',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: CONV_SCALE_OPTS,
+                    plugins: { tooltip: TOOLTIP_OPTS, legend: LEGEND_OPTS }
+                },
+                plugins: [cartesianAxesPlugin]
+            });
+        }
+    }
+
+    // 2. Gráfico de Error Absoluto por Iteración (Escala Logarítmica)
+    const canvasError = document.getElementById('chart-iter-error');
+    if (canvasError) {
+        const ERROR_SCALE_OPTS = {
+            x: {
+                border: { display: true, color: '#94a3b8', width: 2 },
+                ticks: { color: '#f1f5f9', font: { family: 'JetBrains Mono', weight: '600', size: 11 }, maxRotation: 45 },
+                grid: { color: 'rgba(255,255,255,0.08)' },
+                title: { display: true, text: 'Iteración / Término (k)', color: '#f8fafc', font: { weight: 'bold', size: 12 } }
+            },
+            y: {
+                border: { display: true, color: '#94a3b8', width: 2 },
+                ticks: { color: '#f1f5f9', font: { family: 'JetBrains Mono', weight: '600', size: 11 } },
+                grid: { color: 'rgba(255,255,255,0.08)' },
+                type: errores.some(e => e > 0) ? 'logarithmic' : 'linear',
+                title: { display: true, text: 'Error Absoluto / Término', color: '#f8fafc', font: { weight: 'bold', size: 12 } }
+            }
+        };
+
+        if (iterErrorChart) {
+            iterErrorChart.data.labels = labels;
+            iterErrorChart.data.datasets[0].data = errores;
+            iterErrorChart.data.datasets[1].data = terminos;
+            iterErrorChart.options.scales = ERROR_SCALE_OPTS;
+            iterErrorChart.update('none');
+        } else {
+            iterErrorChart = new Chart(canvasError, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Error Absoluto',
+                            data: errores,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239,68,68,0.08)',
+                            borderWidth: 2,
+                            tension: 0.2,
+                            pointRadius: iterations.length > 50 ? 2 : 4,
+                            fill: false,
+                        },
+                        {
+                            label: 'Término (t_k)',
+                            data: terminos,
+                            borderColor: '#f59e0b',
+                            borderWidth: 1.8,
+                            borderDash: [3, 3],
+                            pointRadius: iterations.length > 50 ? 1 : 3,
+                            fill: false,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: ERROR_SCALE_OPTS,
+                    plugins: { tooltip: TOOLTIP_OPTS, legend: LEGEND_OPTS }
+                },
+                plugins: [cartesianAxesPlugin]
+            });
+        }
+    }
+}
+
+function renderIterTable(iterations) {
+    const tbody = document.getElementById('tabla-iteraciones-body');
+    if (!tbody) return;
+
+    if (!iterations.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">No hay iteraciones registradas.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = iterations.map(it => `
+        <tr>
+            <td class="mono font-semibold">k = ${it.n_iteracion}</td>
+            <td class="mono">${it.valor_termino.toExponential(6)}</td>
+            <td class="mono font-semibold">${it.valor_acumulado.toFixed(8)}</td>
+            <td class="mono error-val">${it.error_absoluto.toExponential(4)}</td>
+            <td class="mono text-muted">${it.error_relativo != null ? (it.error_relativo * 100).toFixed(4) + '%' : '—'}</td>
+        </tr>
+    `).join('');
+}
+
 /* ── Table & Pagination ─────────────────────────────────────────────── */
 function totalPages() {
     return Math.max(1, Math.ceil(allRecords.length / PAGE_SIZE));
@@ -381,7 +1152,7 @@ function renderPage() {
     const tbody = document.getElementById('tabla-body');
 
     if (!total) {
-        tbody.innerHTML = '<tr><td colspan="10" class="loading-cell">Sin registros aún.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="loading-cell">Sin registros aún.</td></tr>';
         renderPagination();
         return;
     }
@@ -392,7 +1163,7 @@ function renderPage() {
     const pageData = ordered.slice(start, start + PAGE_SIZE);
 
     tbody.innerHTML = pageData.map(r => `
-        <tr>
+        <tr class="${r.n_registro === selectedRegistroId ? 'table-row-selected' : ''}">
             <td class="mono">${r.n_registro}</td>
             <td><span class="type-badge">${r.tipo_serie}</span></td>
             <td class="text-muted">${r.categoria}</td>
@@ -411,6 +1182,11 @@ function renderPage() {
                     day: '2-digit', month: 'short',
                     hour: '2-digit', minute: '2-digit', second: '2-digit'
                 })}
+            </td>
+            <td>
+                <button class="btn-inspect" onclick="seleccionarRegistro(${r.n_registro}, true)">
+                    🔍 Ver iteraciones
+                </button>
             </td>
         </tr>
     `).join('');

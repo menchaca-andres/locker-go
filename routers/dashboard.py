@@ -5,18 +5,22 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from database.db import get_db
-from database.models import Usuario, RegistroCalculo
-from database.schemas import CalculoResponse, RegistroDetalle
+from database.models import Usuario, RegistroCalculo, IteracionCalculo
+from database.schemas import CalculoResponse, RegistroDetalle, IteracionDetalle
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
+from utils.auth import obtener_usuario_actual
+
+
 # ─── HTML routes ────────────────────────────────────────────────────────────
 
 @router.get("/", response_class=HTMLResponse)
-def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+def index(request: Request, db: Session = Depends(get_db)):
+    usuario = obtener_usuario_actual(request, db)
+    return templates.TemplateResponse("index.html", {"request": request, "usuario": usuario})
 
 
 @router.get("/dashboard/{nombre_usuario}", response_class=HTMLResponse)
@@ -75,3 +79,12 @@ def historial_detalle(nombre_usuario: str, db: Session = Depends(get_db)):
         )
         for r in registros
     ]
+
+
+@router.get("/api/registro/{n_registro}/iteraciones", response_model=List[IteracionDetalle])
+def obtener_iteraciones_registro(n_registro: int, db: Session = Depends(get_db)):
+    """Devuelve la lista detallada de iteraciones/términos calculados para un registro."""
+    registro = db.query(RegistroCalculo).filter_by(n_registro=n_registro).first()
+    if not registro:
+        raise HTTPException(status_code=404, detail="Registro de cálculo no encontrado")
+    return registro.iteraciones

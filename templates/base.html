@@ -18,12 +18,32 @@
                 <span class="brand-icon">∑</span>
                 <span>Series<span class="brand-accent">Calc</span></span>
             </a>
-            <div class="nav-links">
+            <div class="nav-links" id="auth-nav-links">
                 <a href="/" class="nav-link">Inicio</a>
+                <a href="/login" class="nav-link" id="nav-login">Ingresar</a>
+                <a href="/register" class="nav-link nav-link-outline" id="nav-register">Registrarse</a>
                 <a href="/docs" target="_blank" class="nav-link nav-link-outline">API Docs ↗</a>
             </div>
         </div>
     </nav>
+    <script>
+    // Verificar sesión activa para actualizar el navbar
+    fetch('/api/auth/me')
+        .then(res => res.ok ? res.json() : null)
+        .then(user => {
+            const nav = document.getElementById('auth-nav-links');
+            if (user && nav) {
+                nav.innerHTML = `
+                    <a href="/" class="nav-link">Inicio</a>
+                    <a href="/dashboard/${encodeURIComponent(user.nombre_usuario)}" class="nav-link" style="color:#a5b4fc; font-weight:600;">
+                        👤 ${user.nombre_usuario}
+                    </a>
+                    <a href="/logout" class="nav-link" style="color:#ef4444;">Salir</a>
+                    <a href="/docs" target="_blank" class="nav-link nav-link-outline">API Docs ↗</a>
+                `;
+            }
+        }).catch(() => {});
+    </script>
 
     <main class="main-content">
         {% block content %}{% endblock %}

@@ -4,28 +4,77 @@
 {% block content %}
 <section class="hero">
     <div class="container hero-inner">
-        <div class="hero-badge">Cálculo Numérico</div>
+        <div class="hero-badge">Cálculo Numérico y Análisis de Series</div>
         <h1 class="hero-title">
             Aproximación de<br>
             <span class="gradient-text">Series Matemáticas</span>
         </h1>
         <p class="hero-subtitle">
-            Calculá funciones trigonométricas mediante series de Maclaurin y Taylor.
-            Compará el valor aproximado con el real, analizá el error y visualizá los resultados.
+            Plataforma interactiva para el cálculo, análisis de convergencia término a término 
+            y visualización de funciones trigonométricas y series de Taylor en el plano cartesiano.
         </p>
 
         <div class="hero-chips">
-            <span class="chip">Taylor sin/cos</span>
-            <span class="chip">Trig sin/cos/tan</span>
-            <span class="chip">Inversas arcsin/arccos/arctan</span>
+            <span class="chip">Taylor sin / cos</span>
+            <span class="chip">Trigonométricas sin / cos / tan</span>
+            <span class="chip">Inversas arcsin / arccos / arctan</span>
+        </div>
+
+        {% if not usuario %}
+        <!-- Botones de Acción para Visitantes (No autenticados) -->
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 36px;">
+            <a href="/login" class="btn btn-primary" style="padding: 14px 32px; font-size: 1.05rem; box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);">
+                Ingresar a mi cuenta →
+            </a>
+            <a href="/register" class="btn btn-secondary" style="padding: 14px 28px; font-size: 1.05rem;">
+                Crear cuenta nueva
+            </a>
+        </div>
+        {% else %}
+        <!-- Banner para Usuario Autenticado -->
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 36px;">
+            <a href="/dashboard/{{ usuario.nombre_usuario }}" class="btn btn-primary" style="padding: 14px 32px; font-size: 1.05rem; box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);">
+                Ir a mi Dashboard ({{ usuario.nombre_usuario }}) →
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+{% if not usuario %}
+<!-- Features Grid para la Introducción -->
+<section class="container" style="margin-top: 20px; margin-bottom: 80px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+        <div class="glass-card" style="padding: 28px 24px;">
+            <div class="card-icon">⚡</div>
+            <h3 class="card-title" style="font-size: 1.15rem; margin-bottom: 8px;">Cálculo de Alta Precisión</h3>
+            <p class="card-desc">
+                Aproximación de funciones analíticas mediante polinomios de Maclaurin y Taylor con control estricto de error absoluto y relativo.
+            </p>
+        </div>
+        <div class="glass-card" style="padding: 28px 24px;">
+            <div class="card-icon">📈</div>
+            <h3 class="card-title" style="font-size: 1.15rem; margin-bottom: 8px;">Plano Cartesiano 4 Cuadrantes</h3>
+            <p class="card-desc">
+                Visualización gráfica con ejes negativos y positivos en tiempo real para contrastar la función exacta contra el polinomio de la serie.
+            </p>
+        </div>
+        <div class="glass-card" style="padding: 28px 24px;">
+            <div class="card-icon">📊</div>
+            <h3 class="card-title" style="font-size: 1.15rem; margin-bottom: 8px;">Convergencia Término a Término</h3>
+            <p class="card-desc">
+                Desglose granular y persistencia en base de datos de cada término e iteración calculada para un análisis matemático exhaustivo.
+            </p>
         </div>
     </div>
 </section>
 
-<section class="actions-section">
+{% else %}
+<!-- Sección de Cálculo y Dashboard mostrada exclusivamente después de loguearse -->
+<section class="actions-section" style="margin-top: 20px; margin-bottom: 80px;">
     <div class="container actions-grid">
 
-        <!-- Panel: Buscar usuario -->
+        <!-- Panel: Buscar / Ver Dashboard -->
         <div class="glass-card">
             <div class="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -42,6 +91,7 @@
                     type="text"
                     id="input-usuario"
                     class="form-input"
+                    value="{{ usuario.nombre_usuario }}"
                     placeholder="Nombre de usuario..."
                     autocomplete="off"
                     required
@@ -50,7 +100,7 @@
             </form>
         </div>
 
-        <!-- Panel: Calcular -->
+        <!-- Panel: Nuevo Cálculo -->
         <div class="glass-card">
             <div class="card-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -73,6 +123,7 @@
                     type="text"
                     name="nombre_usuario"
                     class="form-input"
+                    value="{{ usuario.nombre_usuario }}"
                     placeholder="Nombre de usuario..."
                     autocomplete="off"
                     required
@@ -96,7 +147,7 @@
                 <div class="form-row">
                     <div class="form-field">
                         <label class="form-label">Valor de x (rad)</label>
-                        <input type="number" name="valor_x" class="form-input" placeholder="p. ej. 0.785" step="any" required>
+                        <input type="number" name="valor_x" class="form-input" placeholder="p. ej. 3" step="any" required>
                     </div>
                     <div class="form-field">
                         <label class="form-label">Nº de términos</label>
@@ -116,7 +167,6 @@ function buscarUsuario(e) {
     const usuario = document.getElementById('input-usuario').value.trim();
     if (usuario) window.location.href = `/dashboard/${encodeURIComponent(usuario)}`;
 }
-
 async function calcular(e) {
     e.preventDefault();
     const form = e.target;
@@ -184,7 +234,7 @@ async function calcular(e) {
                     : ''}
             </div>
             <a href="/dashboard/${encodeURIComponent(payload.nombre_usuario)}" class="btn btn-sm btn-outline">
-                Ver dashboard de ${payload.nombre_usuario} →
+                Ver en mi Dashboard →
             </a>
         `;
         box.classList.remove('hidden');
@@ -194,8 +244,9 @@ async function calcular(e) {
         box.classList.remove('hidden');
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Calcular';
+        btn.textContent = 'Calcular y Guardar';
     }
 }
 </script>
+{% endif %}
 {% endblock %}

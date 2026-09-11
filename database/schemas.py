@@ -47,3 +47,43 @@ class RegistroDetalle(BaseModel):
     error_absoluto: float
     error_relativo: Optional[float]
     fecha_calculo: datetime
+
+
+class IteracionDetalle(BaseModel):
+    id_iteracion: int
+    n_registro: int
+    n_iteracion: int
+    valor_termino: float
+    valor_acumulado: float
+    error_absoluto: float
+    error_relativo: Optional[float]
+
+    class Config:
+        from_attributes = True
+
+
+class RegistroConIteraciones(RegistroDetalle):
+    iteraciones: list[IteracionDetalle] = []
+
+
+# ─── Auth Schemas ─────────────────────────────────────────────────────────────
+
+class UsuarioRegistroRequest(BaseModel):
+    nombre_usuario: str = Field(min_length=3, max_length=50)
+    email: str = Field(min_length=5, max_length=120)
+    password: str = Field(min_length=6, max_length=100)
+
+
+class UsuarioLoginRequest(BaseModel):
+    email_o_usuario: str
+    password: str
+
+
+class UsuarioResponse(BaseModel):
+    id_usuario: int
+    nombre_usuario: str
+    email: Optional[str] = None
+    fecha_registro: datetime
+
+    class Config:
+        from_attributes = True

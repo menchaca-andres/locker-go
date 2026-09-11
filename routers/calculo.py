@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 import math
 
 from database.db import get_db
-from database.models import Usuario, TipoSerie, RegistroCalculo
+from database.models import Usuario, TipoSerie, RegistroCalculo, IteracionCalculo
 from database.schemas import CalculoRequest, CalculoResponse, TipoSerieEnum
 from series.taylor import taylor_seno, taylor_coseno
 from series.trigonometricas import trig_seno, trig_coseno, trig_tangente
@@ -49,7 +49,7 @@ def calcular_serie(datos: CalculoRequest, db: Session = Depends(get_db)):
     funcion_aprox, funcion_real = FUNCIONES_SERIE[datos.tipo_serie]
 
     try:
-        valor_aproximado = funcion_aprox(datos.valor_x, datos.n_terminos)
+        valor_aproximado, iteraciones_raw = funcion_aprox(datos.valor_x, datos.n_terminos, detallado=True)
         valor_real = funcion_real(datos.valor_x)
     except (ValueError, OverflowError, ZeroDivisionError) as e:
         raise HTTPException(
@@ -74,6 +74,24 @@ def calcular_serie(datos: CalculoRequest, db: Session = Depends(get_db)):
         error_relativo=error_relativo,
     )
     db.add(registro)
+    db.flush()
+
+    # Guardar cada iteración calculada
+    for it in iteraciones_raw:
+        val_acum = it["valor_acumulado"]
+        err_abs = abs(valor_real - val_acum) if math.isfinite(val_acum) else float('inf')
+        err_rel = (err_abs / abs(valor_real)) if valor_real != 0 and math.isfinite(err_abs) else None
+
+        iter_obj = IteracionCalculo(
+            n_registro=registro.n_registro,
+            n_iteracion=it["n_iteracion"],
+            valor_termino=it["valor_termino"] if math.isfinite(it["valor_termino"]) else 0.0,
+            valor_acumulado=val_acum if math.isfinite(val_acum) else 0.0,
+            error_absoluto=err_abs if math.isfinite(err_abs) else 1e9,
+            error_relativo=err_rel if err_rel is not None and math.isfinite(err_rel) else None,
+        )
+        db.add(iter_obj)
+
     db.commit()
     db.refresh(registro)
 
