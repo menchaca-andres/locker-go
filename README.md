@@ -110,14 +110,19 @@ La persistencia relacional está implementada con **SQLAlchemy ORM** (compatible
 - Selector de presets para ángulos clave ($\pi/6, \pi/4, \pi/3, \pi/2$).
 - Cálculo instantáneo con visualización de error absoluto y relativo.
 
-### 2. Dashboard Analítico en Tiempo Real
-- **Métricas generales**: Total de cálculos, error promedio, serie más utilizada y última ejecución.
-- **Gráficos Chart.js**:
-  - *Líneas*: Comparación entre Valor Aproximado vs. Valor Real.
-  - *Barras logarítmicas*: Magnitud del error absoluto por registro.
-  - *Dona*: Distribución de cálculos según el tipo de serie.
-- **Tabla paginada de 20 en 20**: Paginación con controles anterior/siguiente y orden cronológico inverso.
-- **Sondeo en tiempo real**: Actualización automática cada 2 segundos.
+### 2. Dashboard Analítico en Tiempo Real (Doble Nivel de Detalle)
+
+El dashboard resuelve tanto el **análisis granular registro por registro** como la **visión ejecutiva resumida**:
+
+#### A. Nivel Granular — Análisis por Cálculo Individual
+- **Gráfico de Líneas (Aproximado vs. Real)**: El eje horizontal mapea cada cálculo individual (`#1, #2, ... #N`), permitiendo comparar la precisión y convergencia obtenida en cada operación matemática específica.
+- **Gráfico de Barras Logarítmico (Error Absoluto por Registro)**: Representa el error individual de cada cálculo en escala logarítmica ($10^0$ a $10^{-16}$). Esto evita que errores microscópicos se aplanen visualmente a cero y permite auditar la estabilidad numérica de cada ejecución.
+- **Tabla Histórica Paginada (20 por página)**: Inspección registro a registro con parámetros de entrada ($x$, términos $n$), valor aproximado (8 decimales), valor real, error absoluto y error relativo porcentual.
+
+#### B. Nivel Ejecutivo — Resumen y Métricas Agregadas
+- **Tarjetas KPI**: Resumen superior instantáneo con *Total de cálculos*, *Error promedio acumulado*, *Serie más utilizada* y *Timestamp del último cálculo*.
+- **Gráfico de Dona**: Distribución porcentual y volumen de uso agrupado por tipo de serie (Taylor, trigonométricas, inversas).
+- **Sondeo en Tiempo Real**: Actualización automática cada 2 segundos vía polling asíncrono sin recarga de página.
 
 ### 3. Cliente CLI por Terminal
 Incluye un cliente de consola interactivo en Python:
